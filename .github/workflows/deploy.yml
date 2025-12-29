@@ -1,4 +1,4 @@
-name: Auto Deploy Laravel via FTP
+name: Auto Deploy Laravel via FTP (Single Account)
 
 on:
   push:
@@ -13,30 +13,30 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Upload source Laravel (kecuali public) ke folder app-test
-      - name: Deploy Source Code
+      # 1) Upload semua source Laravel ke /laravel_app (kecuali folder public)
+      - name: Deploy Source Code to laravel_app
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          port: ${{ secrets.FTP_PORT }}
-          server-dir: ${{ secrets.FTP_TARGET_SOURCE }}
+          port: 21
+          server-dir: /laravel_app/
           exclude: |
             **/.git*
             **/.github/**
             public/**
 
-      # Upload folder public ke public_html
-      - name: Deploy Public Folder
+      # 2) Upload isi folder public ke /public_html (domain utama)
+      - name: Deploy Public Folder to public_html
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          port: ${{ secrets.FTP_PORT }}
+          port: 21
           local-dir: public/
-          server-dir: ${{ secrets.FTP_TARGET_PUBLIC }}
+          server-dir: /public_html/
           exclude: |
             **/.git*
             **/.github/**
