@@ -13,31 +13,51 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ✅ Setup PHP
+      # ✅ Setup PHP + Composer
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
-          extensions: mbstring, pdo, pdo_mysql, zip
+          extensions: mbstring, pdo, pdo_mysql, zip, gd, intl, bcmath, curl, fileinfo
           tools: composer
+
+      # ✅ Cache composer (biar cepat)
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
 
       # ✅ Install composer dependencies -> vendor/
       - name: Install Composer Dependencies
-        run: composer install --no-dev --optimize-autoloader
+        run: composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
 
       # ✅ Setup Node
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '18'
+          cache: 'npm'
 
-      # ✅ Install npm deps
+      # ✅ Install npm deps (lebih stabil dari npm install)
       - name: Install Node Dependencies
-        run: npm install
+        run: npm ci
 
       # ✅ Build Vite -> public/build
       - name: Build Frontend
         run: npm run build
+
+      # ✅ Cek output build supaya yakin (akan muncul di log)
+      - name: Check Build Output
+        run: |
+          echo "=== public folder ==="
+          ls -la public
+          echo "=== public/build ==="
+          ls -la public/build || true
+          echo "=== public/dist ==="
+          ls -la public/dist || true
 
       # ✅ Deploy source (excluding public folder)
       - name: Deploy Source to laravel_app
@@ -53,6 +73,7 @@ jobs:
             **/.github/**
             public/**
             **/.env
+            **/node_modules/**
 
       # ✅ Deploy public folder to public_html
       - name: Deploy Public to public_html
