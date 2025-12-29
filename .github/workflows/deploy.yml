@@ -1,0 +1,42 @@
+name: Auto Deploy Laravel via FTP
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Upload source Laravel (kecuali public) ke folder app-test
+      - name: Deploy Source Code
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: ${{ secrets.FTP_PORT }}
+          server-dir: ${{ secrets.FTP_TARGET_SOURCE }}
+          exclude: |
+            **/.git*
+            **/.github/**
+            public/**
+
+      # Upload folder public ke public_html
+      - name: Deploy Public Folder
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: ${{ secrets.FTP_PORT }}
+          local-dir: public/
+          server-dir: ${{ secrets.FTP_TARGET_PUBLIC }}
+          exclude: |
+            **/.git*
+            **/.github/**
