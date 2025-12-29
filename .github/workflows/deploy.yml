@@ -1,4 +1,4 @@
-name: Auto Deploy Laravel via FTP (Single Account)
+name: Auto Deploy Laravel via FTP (Build + Upload)
 
 on:
   push:
@@ -13,8 +13,34 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 1) Upload semua source Laravel ke /laravel_app (kecuali folder public)
-      - name: Deploy Source Code to laravel_app
+      # ✅ Setup PHP
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, pdo, pdo_mysql, zip
+          tools: composer
+
+      # ✅ Install composer dependencies -> vendor/
+      - name: Install Composer Dependencies
+        run: composer install --no-dev --optimize-autoloader
+
+      # ✅ Setup Node
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      # ✅ Install npm deps
+      - name: Install Node Dependencies
+        run: npm install
+
+      # ✅ Build Vite -> public/build
+      - name: Build Frontend
+        run: npm run build
+
+      # ✅ Deploy source (excluding public folder)
+      - name: Deploy Source to laravel_app
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
@@ -26,9 +52,10 @@ jobs:
             **/.git*
             **/.github/**
             public/**
+            **/.env
 
-      # 2) Upload isi folder public ke /public_html (domain utama)
-      - name: Deploy Public Folder to public_html
+      # ✅ Deploy public folder to public_html
+      - name: Deploy Public to public_html
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
