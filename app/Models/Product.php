@@ -16,6 +16,11 @@ class Product extends Model
         'description',
     ];
 
+    /**
+     * TEMP PROPERTY (tidak akan disimpan DB)
+     */
+    protected array $oldAttributesForLog = [];
+
     protected static function booted(): void
     {
         // CREATE
@@ -24,27 +29,29 @@ class Product extends Model
                 return;
             }
 
-            ExternalLogger::send('product.created', [
+            ExternalLogger::send('DATA_CREATE', [
                 'user_id' => Auth::id(),
                 'data'    => [
-                    'id'          => $product->id,
-                    'name'        => $product->name,
-                    'sku'         => $product->sku,
-                    'price'       => $product->price,
-                    'stock'       => $product->stock,
-                    'description' => $product->description,
+                    'resource'     => 'product',
+                    'id'           => $product->id,
+                    'name'         => $product->name,
+                    'sku'          => $product->sku,
+                    'price'        => $product->price,
+                    'stock'        => $product->stock,
+                    'description'  => $product->description,
                 ],
+                'ip' => request()?->ip(),
             ]);
         });
 
-        // UPDATE → WAJIB before & after
+        // UPDATE -> WAJIB before & after
         static::updating(function (Product $product) {
             if (app()->runningInConsole()) {
                 return;
             }
 
-            // simpan data lama sebelum diupdate
-            $product->old_attributes_for_log = $product->getOriginal();
+            // simpan data lama sebelum update (ke property biasa)
+            $product->oldAttributesForLog = $product->getOriginal();
         });
 
         static::updated(function (Product $product) {
@@ -52,13 +59,14 @@ class Product extends Model
                 return;
             }
 
-            $before = $product->old_attributes_for_log ?? $product->getOriginal();
+            $before = $product->oldAttributesForLog ?: $product->getOriginal();
             $after  = $product->getAttributes();
 
-            ExternalLogger::send('product.updated', [
+            ExternalLogger::send('DATA_UPDATE', [
                 'user_id' => Auth::id(),
-                'before'  => $before,
-                'after'   => $after,
+                'before'  => array_merge(['resource' => 'product'], $before),
+                'after'   => array_merge(['resource' => 'product'], $after),
+                'ip'      => request()?->ip(),
             ]);
         });
 
@@ -68,9 +76,11 @@ class Product extends Model
                 return;
             }
 
-            ExternalLogger::send('product.deleted', [
+            ExternalLogger::send('DATA_DELETE', [
                 'user_id' => Auth::id(),
-                'id'      => $product->id,
+                'id'      => $product->id, // wajib sesuai rules
+                'ip'      => request()?->ip(),
+                'resource'=> 'product',
                 'name'    => $product->name,
                 'sku'     => $product->sku,
             ]);
