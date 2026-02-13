@@ -36,6 +36,9 @@ class ExternalLogger
         try {
             /** @var Response $response */
             $response = Http::acceptJson()
+                ->withOptions([
+                    'verify' => false, // Bypass SSL verification
+                ])
                 ->withHeaders([
                     'X-API-KEY' => $token,
                 ])
