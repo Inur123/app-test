@@ -60,6 +60,8 @@ class ExternalLogger
         try {
             /** @var Response $response */
             $response = Http::acceptJson()
+                ->timeout(3) // Maksimal tunggu 3 detik
+                ->connectTimeout(2) // Maksimal koneksi 2 detik
                 ->withOptions([
                     'verify' => false, // Bypass SSL verification
                 ])
